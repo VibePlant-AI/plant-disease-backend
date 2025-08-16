@@ -7,7 +7,7 @@ import psycopg2
 db_url = os.environ.get('DATABASE_URL')
 
 if not db_url:
-    print("ERROR: DATABASE_URL_CI environment variable not set.")
+    print("ERROR: DATABASE_URL environment variable not set.")
     sys.exit(1) # Exit with a failure code
 
 print("Attempting to connect to the database...")

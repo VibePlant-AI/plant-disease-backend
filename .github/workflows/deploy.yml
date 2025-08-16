@@ -27,7 +27,7 @@ jobs:
         # We pass the DATABASE_URL from GitHub Secrets as an environment variable
         # to the Python script. We use a different name to avoid confusion.
         env:
-          DATABASE_URL_CI: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python check_db_connection.py
 
   # --- JOB 2: Build and Deploy ---

@@ -28,7 +28,7 @@ jobs:
         # to the Python script. We use a different name to avoid confusion.
         env:
           DATABASE_URL_CI: ${{ secrets.DATABASE_URL }}
-        run: python scripts/check_db_connection.py
+        run: python check_db_connection.py
 
   # --- JOB 2: Build and Deploy ---
   deploy:

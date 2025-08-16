@@ -1,0 +1,79 @@
+name: Test and Deploy Django Backend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # --- JOB 1: Test Database Connection ---
+  test-db-connection:
+    runs-on: ubuntu-latest
+    name: Test Database Connection
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies for test script
+        run: pip install psycopg2-binary python-dotenv
+
+      - name: Run Database Connection Test
+        # We pass the DATABASE_URL from GitHub Secrets as an environment variable
+        # to the Python script. We use a different name to avoid confusion.
+        env:
+          DATABASE_URL_CI: ${{ secrets.DATABASE_URL }}
+        run: python scripts/check_db_connection.py
+
+  # --- JOB 2: Build and Deploy ---
+  deploy:
+    # This 'needs' keyword ensures that the 'deploy' job will ONLY run
+    # if the 'test-db-connection' job completes successfully.
+    needs: test-db-connection
+    runs-on: ubuntu-latest
+    name: Build and Deploy to EC2
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/plant-disease-backend:latest
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USERNAME }}
+          key: |
+            ${{ secrets.AWS_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/plant-disease-backend:latest
+            docker stop backend-container || true
+            docker rm backend-container || true
+            docker run -d -p 8000:8000 \
+              -e SECRET_KEY='${{ secrets.SECRET_KEY }}' \
+              -e DEBUG=False \
+              -e DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+              -e EC2_PREDICT_URL='${{ secrets.EC2_PREDICT_URL }}' \
+              -e CORS_ALLOWED_ORIGINS='http://localhost:4200,https://your-frontend-domain.com' \
+              --name backend-container \
+              ${{ secrets.DOCKERHUB_USERNAME }}/plant-disease-backend:latest

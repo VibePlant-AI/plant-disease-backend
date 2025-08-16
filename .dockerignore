@@ -1,0 +1,9 @@
+# .dockerignore (in plant-disease-backend repo)
+Dockerfile
+.dockerignore
+.git/
+.gitignore
+.venv/
+__pycache__/
+.env
+*.pem

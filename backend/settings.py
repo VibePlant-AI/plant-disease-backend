@@ -138,6 +138,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",  
+    "http://vibe-plant-frontend-app.s3-website-us-east-1.amazonaws.com",
 ]
 
 REST_FRAMEWORK = {

@@ -7,20 +7,20 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app
 
-# Install uv, the fast package manager
-RUN pip install uv
+# Install pip-tools to support pyproject.toml directly (optional, safer)
+RUN pip install --upgrade pip setuptools wheel
 
-# Copy only the files needed for dependency installation
-COPY pyproject.toml uv.lock ./
+# Copy dependency files
+COPY pyproject.toml ./
 
-# Use uv to sync the environment from the lock file (fast and reproducible)
-RUN uv pip sync uv.lock
+# Install dependencies from pyproject.toml
+# This installs the project and its dependencies
+RUN pip install .
 
 # Copy the rest of the Django application code
 COPY . .
 
 # Run database migrations during the build process
-# This ensures the database is ready when the container starts
 RUN python manage.py migrate
 
 # Expose the port Gunicorn will run on
